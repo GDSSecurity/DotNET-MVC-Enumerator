@@ -32,7 +32,7 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                 string cur_dir = Directory.GetCurrentDirectory();
 
                 string[] Path =
-                    Directory.GetFiles(@"C:\Users\Priyank\Documents\IdentityServer3-master\IdentityServer3-master\source\Core\Endpoints", "*.cs", SearchOption.AllDirectories);
+                    Directory.GetFiles(@cur_dir, " *.cs", SearchOption.AllDirectories);
                 if (args.Length == 1)
                 {
                     attribute = args[0];
