@@ -14,40 +14,81 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using ConsoleApplication1.source;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
+
 namespace com.gdsssecurity.dotNetMVCEnumerator
 {
-    class Program
+    static class Program
     {
         private static void Main(string[] args)
-        {
-            var attribute = "";
-            List<String> resultList = new List<String>();
+        {   
+            string attribute = "";
+            string csvOutputFile = "";
+            List<List<String>> resultList = new List<List<string>>();
+
             try
             {
-                string cur_dir = Directory.GetCurrentDirectory();
-
-                string[] Path =
-                    Directory.GetFiles(@cur_dir, " *.cs", SearchOption.AllDirectories);
-                if (args.Length == 1)
+                var options = new Options();
+                bool isFlagValid = options.OptionParser(args, out csvOutputFile, out attribute);
+                
+                // If Command-line options not set correctly, show default message and exit
+                if (!isFlagValid)
                 {
-                    attribute = args[0];
+                    System.Environment.Exit(0);
                 }
-                foreach (var path in Path)
-                {
-                   using (var stream = File.OpenRead(path))
-                    {
-                        var tree = CSharpSyntaxTree.ParseText(SourceText.From(stream), path: path);
-                        SyntaxNode root = tree.GetRoot();
 
-                        // Check if the Class inherits Apicontroller or Controller and print out all the public entry points
-                        ControllerChecker controllerchk = new ControllerChecker();
-                        controllerchk.controllerChecker(root, attribute);
-                     }
+                string curDir = Directory.GetCurrentDirectory();
+                string[] paths = Directory.GetFiles(@curDir, "*.cs", SearchOption.AllDirectories);
+
+                if (paths.Length > 0)
+                {
+                    foreach (var path in paths)
+                    {
+                        using (var stream = File.OpenRead(path))
+                        {
+                            var tree = CSharpSyntaxTree.ParseText(SourceText.From(stream), path: path);
+                            SyntaxNode root = tree.GetRoot();
+
+                            // Check if the Class inherits Apicontroller or Controller and print out all the public entry points
+                            ControllerChecker controllerchk = new ControllerChecker();
+                            resultList.Add(controllerchk.controllerChecker(root, attribute));
+                        }
+                    }
+                    // Output to CSV if a filename is specified
+                    if (!String.IsNullOrEmpty(csvOutputFile))
+                    {
+                        var csvExport = new CsvExport();
+                        for (int j = 0; j < resultList.Count; j++)
+                        {
+                            for (int i = 0; i < (resultList[j].Count() - 2); i = i + 3)
+                            {
+                                csvExport.AddRow();
+                                csvExport["Entry point"] = resultList[j].ToArray()[i].ToString();
+                                csvExport["Method Supported"] = resultList[j].ToArray()[i + 1].ToString();
+                                csvExport[attribute + " Set?"] = resultList[j].ToArray()[i + 2].ToString();
+                            }
+                        }
+
+                        File.Create(csvOutputFile).Dispose();
+                        csvExport.ExportToFile(curDir + Path.DirectorySeparatorChar + csvOutputFile);
+                        Console.WriteLine("Results written at " + curDir + Path.DirectorySeparatorChar + csvOutputFile);
+                    }
+                    else
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("Need these in CSV format? Try " +
+                                          Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location) +
+                                          " -o <Filename> !");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Your Current Path does not contain in .cs Files");
                 }
             }
             catch (DirectoryNotFoundException)
@@ -64,15 +105,16 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                 Console.WriteLine("File does not seem to a valid C# file, Skipping..");
                 
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException e)
             {
+                e.GetBaseException();
                 Console.WriteLine("You do not seem to have appropiate Permissions on this direcctory");
             }
             catch (NotSupportedException)
             {
                 Console.WriteLine("The operating system is Windows CE, which does not have current directory functionality.");
             }
-            
+           
         }
     }
 }
