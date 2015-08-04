@@ -80,7 +80,8 @@ namespace DotNetMVCEnumerator.source
                     if (isValid)
                     {
                         //DataTables hack!
-                        TableParser.centerText("\nFor " + isController.Identifier.ToString() + "\n");
+                        Console.WriteLine();
+                        TableParser.centerText("For " + isController.Identifier.ToString() + "\n");
                         DataTable resultsTable = new DataTable("Entry Points Enumerator Output");
                         resultsTable.Clear();
                         resultsTable.Columns.Add("Entry point");
