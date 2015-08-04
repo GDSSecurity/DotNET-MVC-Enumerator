@@ -9,38 +9,44 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace com.gdsssecurity.dotNetMVCEnumerator
+namespace DotNetMVCEnumerator.source
 {
     class CheckAttribute
     {
         public static Boolean checkAttribute(IEnumerable<MethodDeclarationSyntax> methods, String attr, ClassDeclarationSyntax c)
         {
-            //Check at class level
+            Boolean isSet = false;
+            //Check at class level, digging two levels deep for class-level attributes in ClassDeclarationSyntax Type
             foreach (var attribute in c.AttributeLists)
             {
                 foreach (var name in attribute.Attributes)
                 {
-                    if (name.Name.ToString().Contains(attr))
+                    if (name.Name.ToString().Equals(attr))
                     {
-                        return true;
+                        isSet = true;
                     }
                 }       
             }
-            //If it's not at Class level, check the methods
-            foreach (var a in methods)
+            /* If not found at Class level, check the methods
+            * Unfortunately MethodDeclarationSyntax is of Type IEnumerable, so we dig three levels for the Atttribute Lists
+            */
+            foreach (var methodList in methods)
             {
-                if (a.ToString().Contains(attr))
+                foreach (var methodLevelAttirbutes in methodList.AttributeLists)
                 {
-                    //Console.Write("EntryPoint " + a.Identifier.ValueText + " supports ");
-                    //Console.WriteLine(attr + " on method level");
-                    return true;
+                    foreach (var methodAttr in methodLevelAttirbutes.Attributes)
+                    {
+                        if (methodAttr.ToString().Equals(attr))
+                        {
+                            isSet = true;
+                        }
+                    }
                 }
+                //if (a.ToString().Contains(attr)) return true;
             }
-            return false;
+            return isSet;
         }
     }
 }

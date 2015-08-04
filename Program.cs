@@ -7,21 +7,15 @@
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text.RegularExpressions;
-using ConsoleApplication1.source;
+using DotNetMVCEnumerator.source;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-
-namespace com.gdsssecurity.dotNetMVCEnumerator
+namespace DotNetMVCEnumerator
 {
     static class Program
     {
@@ -59,8 +53,18 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                             resultList.Add(controllerchk.controllerChecker(root, attribute));
                         }
                     }
-                    // Output to CSV if a filename is specified
-                    if (!String.IsNullOrEmpty(csvOutputFile))
+                    
+                    Boolean isResultListEmpty = true;
+                    foreach (var result in resultList)
+                    {
+                        if (result.Count > 0)
+                        {
+                            isResultListEmpty = false;
+                        }
+                    }
+                    // Output to CSV if a filename is specified and resultList is not empty
+
+                    if (!String.IsNullOrEmpty(csvOutputFile) && !isResultListEmpty)
                     {
                         var csvExport = new CsvExport();
                         for (int j = 0; j < resultList.Count; j++)
@@ -78,10 +82,15 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                         csvExport.ExportToFile(curDir + Path.DirectorySeparatorChar + csvOutputFile);
                         Console.WriteLine("Results written at " + curDir + Path.DirectorySeparatorChar + csvOutputFile);
                     }
+                    if (isResultListEmpty)
+                    {
+                        Console.WriteLine();
+                        TableParser.centerText("No Results to display!");
+                    }
                     else
                     {
                         Console.WriteLine();
-                        Console.WriteLine("Need these in CSV format? Try " +
+                        Console.WriteLine("Need your results in CSV format? Try " +
                                           Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location) +
                                           " -o <Filename> !");
                     }

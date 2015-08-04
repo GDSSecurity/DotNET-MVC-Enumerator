@@ -1,15 +1,15 @@
 /*
 * https://github.com/jitbit/CsvExport
 */
+
 using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Web;
 
-namespace com.gdsssecurity.dotNetMVCEnumerator
+namespace DotNetMVCEnumerator.source
 {
     /// <summary>
     /// Simple CSV export

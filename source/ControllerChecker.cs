@@ -13,19 +13,20 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace com.gdsssecurity.dotNetMVCEnumerator
+namespace DotNetMVCEnumerator.source
 {
     class ControllerChecker
     {
         Boolean _isAttrSet;
         List<String> results = new List<string>();
-        public void controllerChecker(SyntaxNode root, String args)
+        public List<String> controllerChecker(SyntaxNode root, String args)
         {
             /*
                  Check if the Class inherits Apicontroller or Controller
             */
             try
             {
+                
                 if (root.DescendantNodes().OfType<BaseTypeSyntax>().First().ToString().Equals("ApiController") ||
                     root.DescendantNodes().OfType<BaseTypeSyntax>().First().ToString().Equals("Controller"))
                 {
@@ -42,7 +43,6 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                     Boolean isValid = false;
                     foreach (var a in methods)
                     {
-                        //isValid = false;
                         /*
                         Check the presence of attribute (passsed as command line argument)
                         */
@@ -50,7 +50,13 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                         if (!_isAttrSet && !String.IsNullOrEmpty(args))
                         {
                             _isAttrSet = CheckAttribute.checkAttribute(methods, args, isController);
-                            isValid = true;
+                            if (_isAttrSet)
+                            {
+                                results.Add(a.Identifier.ValueText);
+                                results.Add("");
+                                results.Add(!String.IsNullOrEmpty(args) ? _isAttrSet.ToString() : "");
+                                isValid = true;
+                            }
                         }
 
                         if (a.ToString().Contains("HttpPost"))
@@ -69,15 +75,17 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                         }
                     }
                     //Console.WriteLine(isController.Identifier.ToString() + " contains " + methods.Count() + " entry methods" + (isValid ? " and they are as follows" : " but they do not meet the criteria"));
+
+                    //Output to Console only if we have some items in results List
                     if (isValid)
                     {
                         //DataTables hack!
-                        Console.WriteLine("For " + isController.Identifier.ToString());
+                        TableParser.centerText("\nFor " + isController.Identifier.ToString() + "\n");
                         DataTable resultsTable = new DataTable("Entry Points Enumerator Output");
                         resultsTable.Clear();
                         resultsTable.Columns.Add("Entry point");
                         resultsTable.Columns.Add("Method Supported");
-                        resultsTable.Columns.Add("Attribute " + args + " Set?");
+                        resultsTable.Columns.Add(args + " Set?");
 
                         TableParser.tableParser(resultsTable, results);
                     }
@@ -87,11 +95,11 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                     Console.WriteLine("There are no Defined Entrypoints in this file");
                 }
             }
-            catch (Exception)
+            catch (InvalidOperationException)
             {
-                Console.WriteLine("Ooops! Something went wrong!");
-            }
-        
+                Console.WriteLine("File does not seem to a valid C# file, Skipping..");
+                }
+            return results;
         }
     }
 }

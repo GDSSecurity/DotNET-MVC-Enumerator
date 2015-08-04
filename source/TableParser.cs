@@ -1,17 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 /*
 * tableParser() - http://stackoverflow.com/questions/856845/how-to-best-way-to-draw-table-in-console-app-c
 * The least popular, but a simple solution!
 */
 
-namespace com.gdsssecurity.dotNetMVCEnumerator
+namespace DotNetMVCEnumerator.source
 {
     
     public static class TableParser
@@ -59,6 +56,12 @@ namespace com.gdsssecurity.dotNetMVCEnumerator
                 Console.WriteLine("Ooops! Something went wrong!");
             }
         }
-        
+
+        public static void centerText(String text)
+        {
+            Console.Write(new string(' ', (Console.WindowWidth - text.Length) / 2));
+            Console.WriteLine(text);
+        }
+
     }
 }

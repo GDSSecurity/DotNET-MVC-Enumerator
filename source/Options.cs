@@ -1,18 +1,14 @@
 /*
+*  Command Line Parser Library 
 *  https://github.com/gsscoder/commandline
 */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using CommandLine;
-using CommandLine.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace ConsoleApplication1.source
+namespace DotNetMVCEnumerator.source
 {
     class Options
     {
@@ -44,7 +40,7 @@ namespace ConsoleApplication1.source
                 // consume Options instance properties
                 if (!String.IsNullOrEmpty(this.CsvOutput))
                 {
-                    if (Path.GetExtension(this.CsvOutput).ToLower().Equals("csv"))
+                    if (Path.GetExtension(this.CsvOutput).ToLower().Equals(".csv"))
                     {
                         csvOutputFile = this.CsvOutput;
                     }
