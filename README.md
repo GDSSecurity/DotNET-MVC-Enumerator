@@ -15,6 +15,8 @@ And yeah, the ouput can be saved in a CSV format if specified.
 Fetch the .sln file and you should be good to go. Build it in Visual Studio supporting .NET version 4.5+.
 All the dependencies are in the packages/ directory. 
 
+Note: If Visual Studio complains about a missing app.config file, delete it from the solution explorer and the build should work.
+
 ###Usage
 
 The basic usage of the script is as follows:
