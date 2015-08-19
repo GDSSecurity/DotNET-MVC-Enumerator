@@ -11,26 +11,6 @@ using System.Text;
 
 namespace DotNetMVCEnumerator.source
 {
-    /// <summary>
-    /// Simple CSV export
-    /// Example:
-    ///   CsvExport myExport = new CsvExport();
-    ///
-    ///   myExport.AddRow();
-    ///   myExport["Region"] = "New York, USA";
-    ///   myExport["Sales"] = 100000;
-    ///   myExport["Date Opened"] = new DateTime(2003, 12, 31);
-    ///
-    ///   myExport.AddRow();
-    ///   myExport["Region"] = "Sydney \"in\" Australia";
-    ///   myExport["Sales"] = 50000;
-    ///   myExport["Date Opened"] = new DateTime(2005, 1, 1, 9, 30, 0);
-    ///
-    /// Then you can do any of the following three output options:
-    ///   string myCsv = myExport.Export();
-    ///   myExport.ExportToFile("Somefile.csv");
-    ///   byte[] myCsvData = myExport.ExportToBytes();
-    /// </summary>
     public class CsvExport
     {
         /// <summary>

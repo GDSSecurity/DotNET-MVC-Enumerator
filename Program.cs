@@ -14,21 +14,24 @@ using DotNetMVCEnumerator.source;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using System.Data;
 
 namespace DotNetMVCEnumerator
 {
     static class Program
     {
         private static void Main(string[] args)
-        {   
+        {
             string attribute = "";
             string csvOutputFile = "";
-            List<List<String>> resultList = new List<List<string>>();
+            string directoryToScan = "";
+            string negativeSearch = "";
+            Dictionary<String, List<Result>> results = new Dictionary<string, List<Result>>();
 
             try
             {
                 var options = new Options();
-                bool isFlagValid = options.OptionParser(args, out csvOutputFile, out attribute);
+                bool isFlagValid = options.OptionParser(args, out csvOutputFile, out attribute, out directoryToScan, out negativeSearch);
                 
                 // If Command-line options not set correctly, show default message and exit
                 if (!isFlagValid)
@@ -36,8 +39,19 @@ namespace DotNetMVCEnumerator
                     System.Environment.Exit(0);
                 }
 
+                if(String.IsNullOrEmpty(csvOutputFile))
+                {
+                    DateTime dt = DateTime.Now;
+                    String timestamp = dt.ToString("yyyyMMddHHmmss");
+                    csvOutputFile = "enumerated_controllers_"+timestamp+".csv";
+                }
+
                 string curDir = Directory.GetCurrentDirectory();
-                string[] paths = Directory.GetFiles(@curDir, "*.cs", SearchOption.AllDirectories);
+                if (String.IsNullOrEmpty(directoryToScan))
+                {
+                    directoryToScan = curDir;
+                }
+                string[] paths = Directory.GetFiles(directoryToScan, "*.cs", SearchOption.AllDirectories);
 
                 if (paths.Length > 0)
                 {
@@ -50,54 +64,22 @@ namespace DotNetMVCEnumerator
 
                             // Check if the Class inherits Apicontroller or Controller and print out all the public entry points
                             ControllerChecker controllerchk = new ControllerChecker();
-                            resultList.Add(controllerchk.controllerChecker(root, attribute));
-                        }
-                    }
-                    
-                    Boolean isResultListEmpty = true;
-                    foreach (var result in resultList)
-                    {
-                        if (result.Count > 0)
-                        {
-                            isResultListEmpty = false;
-                        }
-                    }
-                    // Output to CSV if a filename is specified and resultList is not empty
-
-                    if (!String.IsNullOrEmpty(csvOutputFile) && !isResultListEmpty)
-                    {
-                        var csvExport = new CsvExport();
-                        for (int j = 0; j < resultList.Count; j++)
-                        {
-                            for (int i = 0; i < (resultList[j].Count() - 2); i = i + 3)
+                            if (controllerchk.inheritsFromController(root, attribute))
                             {
-                                csvExport.AddRow();
-                                csvExport["Entry point"] = resultList[j].ToArray()[i].ToString();
-                                csvExport["Method Supported"] = resultList[j].ToArray()[i + 1].ToString();
-                                csvExport[attribute + " Set?"] = resultList[j].ToArray()[i + 2].ToString();
+                                controllerchk.enumerateEntrypoints(root, attribute, negativeSearch, path, results);
                             }
                         }
+                    }
 
-                        File.Create(csvOutputFile).Dispose();
-                        csvExport.ExportToFile(curDir + Path.DirectorySeparatorChar + csvOutputFile);
-                        Console.WriteLine("Results written at " + curDir + Path.DirectorySeparatorChar + csvOutputFile);
-                    }
-                    if (isResultListEmpty)
+                    string[] controllerPaths = results.Keys.ToArray();
+                    String pathToTrim = getPathToTrim(controllerPaths);
+
+                    if (!String.IsNullOrEmpty(attribute) || !String.IsNullOrEmpty(negativeSearch))
                     {
-                        Console.WriteLine();
-                        TableParser.centerText("No Results to display!");
+                        printCommandLineResults(results, pathToTrim);
                     }
-                    else
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("Need your results in CSV format? Try " +
-                                          Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location) +
-                                          " -o <Filename> !");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Your Current Path does not contain in .cs Files");
+                   
+                    printCSVResults(results, csvOutputFile, pathToTrim);
                 }
             }
             catch (DirectoryNotFoundException)
@@ -109,11 +91,6 @@ namespace DotNetMVCEnumerator
                 //Shoudn't Reach this, but in case
                 Console.WriteLine("No Arguments passed");
             }
-            catch (InvalidOperationException)
-            {
-                Console.WriteLine("File does not seem to a valid C# file, Skipping..");
-                
-            }
             catch (UnauthorizedAccessException e)
             {
                 e.GetBaseException();
@@ -123,9 +100,106 @@ namespace DotNetMVCEnumerator
             {
                 Console.WriteLine("The operating system is Windows CE, which does not have current directory functionality.");
             }
+            catch (ArgumentException)
+            {
+                Console.WriteLine("Illegal characters passed as arguments! ");
+            }
+            catch(Exception)
+            {
+                Console.WriteLine("Unexpected error");
+            }
+        }
+
+        public static void printCommandLineResults(Dictionary<String, List<Result>> results, String pathToTrim)
+        {
+            foreach( KeyValuePair<String, List<Result>> pair in results)
+            {
+                Console.WriteLine("Controller: \n" + pair.Key.Replace(pathToTrim, ""));
+                Console.WriteLine("\nMethods: ");
+                foreach(Result result in pair.Value)
+                {
+                    Console.WriteLine(result.MethodName);
+                }
+                    
+                Console.WriteLine("\n======================\n");
+            }
+        }
+
+        public static void printCSVResults(Dictionary<String, List<Result>> results, String filename, String pathToTrim)
+        {
+            var csvExport = new CsvExport();
+
+            foreach (KeyValuePair<String, List<Result>> pair in results)
+            {
+                foreach (Result result in pair.Value)
+                {
+                    csvExport.AddRow();
+                    csvExport["Controller"] = pair.Key.Replace(pathToTrim, "");
+                    csvExport["Method Name"] = result.MethodName;
+                    csvExport["Route"] = result.Route;
+                    csvExport["HTTP Method"] = string.Join(", ", result.HttpMethods.ToArray());
+                    csvExport["Attributes"] = string.Join(", ", result.Attributes.ToArray());
+                }
+            }
+
+            File.Create(filename).Dispose();
+            csvExport.ExportToFile(filename);
+            Console.WriteLine("CSV output written to: " + filename);
+        }
+
+
+        public static String getPathToTrim(String[] paths)
+        {
+            string pathToTrim = "";
+
+            try
+            {
+                String aPath = paths.First();
+                
+                string[] dirsInFilePath = aPath.Split('\\');
+                int highestMatchingIndex = 0;
+
+                for (int i = 0; i < dirsInFilePath.Length; i++)
+                {
+
+                    for (int j = 0; j < paths.Length; j++)
+                    {
+                        string[] splitPath = paths[j].Split('\\');
+                        if (!dirsInFilePath[i].Equals(splitPath[i]))
+                        {
+                            highestMatchingIndex = i - 1;
+                            break;
+                        }
+
+                    }
+                }
+
+                if (highestMatchingIndex == 0)
+                {
+                    pathToTrim =  "." + "\\";
+                }
+                else
+                {
+                    pathToTrim = string.Join("\\", dirsInFilePath, 0, highestMatchingIndex);
+                }
+
+            }
+            catch (InvalidOperationException)
+            {
+                Console.WriteLine("No Entrypoints with the specified search parameters found.");
+            }
+
+            catch( Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+
+            return pathToTrim;
            
         }
     }
+
+   
 }
     
     

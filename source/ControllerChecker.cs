@@ -17,90 +17,110 @@ namespace DotNetMVCEnumerator.source
 {
     class ControllerChecker
     {
-        Boolean _isAttrSet;
         List<String> results = new List<string>();
-        public List<String> controllerChecker(SyntaxNode root, String args)
+
+        public bool inheritsFromController(SyntaxNode root, String args)
         {
-            /*
-                 Check if the Class inherits Apicontroller or Controller
-            */
+
+            bool isValid = false;
+
             try
             {
+                 isValid = root.DescendantNodes().OfType<BaseTypeSyntax>().First().ToString().Equals("ApiController") ||
+                   root.DescendantNodes().OfType<BaseTypeSyntax>().First().ToString().Equals("Controller");
+            }
+            catch (InvalidOperationException)
+            {
+                isValid = false;   
+            }
+
+            return isValid;
+        }
+
+
+        public void enumerateEntrypoints(SyntaxNode root, String attributeToSearch, String negativeSearch, 
+            String path, Dictionary<String, List<Result>> resultList)
+        {
+            try
+            {
+                ClassDeclarationSyntax controller =
+                    root.DescendantNodes().OfType<ClassDeclarationSyntax>().First();
                 
-                if (root.DescendantNodes().OfType<BaseTypeSyntax>().First().ToString().Equals("ApiController") ||
-                    root.DescendantNodes().OfType<BaseTypeSyntax>().First().ToString().Equals("Controller"))
+                //Get all the public methods in this class
+                IEnumerable<MethodDeclarationSyntax> methods =
+                    from m in root.DescendantNodes().OfType<MethodDeclarationSyntax>()
+                    where m.Modifiers.ToString().Contains("public")
+                    select m;
+
+                List<string> controllerAttrs = CheckAttribute.getControllerAttributes(controller);
+
+                List<Result> resultsForController = new List<Result>();
+
+                foreach (var method in methods)
                 {
-                    ClassDeclarationSyntax isController =
-                        root.DescendantNodes().OfType<ClassDeclarationSyntax>().First();
-                    /*
-                    Get all the public methods in this class
-                     */
-                    IEnumerable<MethodDeclarationSyntax> methods =
-                        from m in root.DescendantNodes().OfType<MethodDeclarationSyntax>()
-                        where m.Modifiers.ToString().Contains("public")
-                        select m;
+                    Result result = new Result();
 
-                    Boolean isValid = false;
-                    foreach (var a in methods)
+                    // Return all the attributes to list it only in the CSV output
+                    List<String> methodAttributes = CheckAttribute.getMethodAttributes(method, controller);
+                    
+                    // Set attributes set at Controller level
+                    CheckAttribute.setMethodAttributesFromController(methodAttributes, controllerAttrs);
+
+                    Boolean addAttributeFlag = true;
+
+                    if (!String.IsNullOrEmpty(attributeToSearch))
                     {
-                        /*
-                        Check the presence of attribute (passsed as command line argument)
-                        */
+                        String attributeMatched = methodAttributes.FirstOrDefault(s => s.StartsWith(attributeToSearch));
 
-                        if (!_isAttrSet && !String.IsNullOrEmpty(args))
+                        // Only add attributes that start with the value 'searched' for - via command line switch
+                        if(String.IsNullOrEmpty(attributeMatched))
                         {
-                            _isAttrSet = CheckAttribute.checkAttribute(methods, args, isController);
-                            if (_isAttrSet)
-                            {
-                                results.Add(a.Identifier.ValueText);
-                                results.Add("");
-                                results.Add(!String.IsNullOrEmpty(args) ? _isAttrSet.ToString() : "");
-                                isValid = true;
-                            }
-                        }
-
-                        if (a.ToString().Contains("HttpPost"))
-                        {
-                            results.Add(a.Identifier.ValueText);
-                            results.Add("HTTP POST");
-                            results.Add(!String.IsNullOrEmpty(args)?_isAttrSet.ToString() : "");
-                            isValid = true;
-                        }
-                        if (a.ToString().Contains("HttpGet"))
-                        {
-                            results.Add(a.Identifier.ValueText);
-                            results.Add("HTTP GET");
-                            results.Add(!String.IsNullOrEmpty(args) ? _isAttrSet.ToString() : "");
-                            isValid = true;
+                            addAttributeFlag = false;
                         }
                     }
-                    //Console.WriteLine(isController.Identifier.ToString() + " contains " + methods.Count() + " entry methods" + (isValid ? " and they are as follows" : " but they do not meet the criteria"));
 
-                    //Output to Console only if we have some items in results List
-                    if (isValid)
+
+                    // Only add attributes that are missing the 'negative search' passed via command line switch
+                    if (!String.IsNullOrEmpty(negativeSearch))
                     {
-                        //DataTables hack!
-                        Console.WriteLine();
-                        TableParser.centerText("For " + isController.Identifier.ToString() + "\n");
-                        DataTable resultsTable = new DataTable("Entry Points Enumerator Output");
-                        resultsTable.Clear();
-                        resultsTable.Columns.Add("Entry point");
-                        resultsTable.Columns.Add("Method Supported");
-                        resultsTable.Columns.Add(args + " Set?");
-
-                        TableParser.tableParser(resultsTable, results);
+                        String attributeMatched = methodAttributes.FirstOrDefault(s => s.StartsWith(negativeSearch));
+                       
+                        if(!String.IsNullOrEmpty(attributeMatched))
+                        {
+                            addAttributeFlag = false;
+                        }
                     }
+                    
+                   
+                    if(addAttributeFlag)
+                    {
+                        result.MethodName = method.Identifier.ValueText;
+
+                        result.Attributes = methodAttributes;
+
+                        result.setSupportedHTTPMethods(methodAttributes);
+
+                        result.setRoute(methodAttributes);
+
+                        resultsForController.Add(result);
+                    }
+                    
                 }
-                else
+
+                if(resultsForController.ToArray().Length > 0)
                 {
-                    Console.WriteLine("There are no Defined Entrypoints in this file");
+                    resultList.Add(path, resultsForController);
                 }
             }
             catch (InvalidOperationException)
             {
-                Console.WriteLine("File does not seem to a valid C# file, Skipping..");
-                }
-            return results;
+                Console.WriteLine("Failed to parse: \"" + path + "\", Skipping..");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Unhandled Exception Occurred.");
+                Console.WriteLine(e.ToString());
+            }
         }
     }
 }

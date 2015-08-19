@@ -44,9 +44,62 @@ namespace DotNetMVCEnumerator.source
                         }
                     }
                 }
-                //if (a.ToString().Contains(attr)) return true;
             }
             return isSet;
+        }
+
+        public static List<string> getControllerAttributes(ClassDeclarationSyntax controller)
+        {
+            List<string> attributes = new List<string>();
+
+            foreach (var attribute in controller.AttributeLists)
+            {
+                foreach (var name in attribute.Attributes)
+                {
+                    attributes.Add(name.ToString());
+                }
+            }
+
+            return attributes;
+        }
+
+        public static List<String> getMethodAttributes(MethodDeclarationSyntax method, ClassDeclarationSyntax c)
+        {
+            List<String> attributes = new List<string>();
+
+            foreach (var methodLevelAttributes in method.AttributeLists)
+            {
+                foreach (var methodAttr in methodLevelAttributes.Attributes)
+                {
+                    attributes.Add(methodAttr.ToString());
+                }
+            }
+
+            return attributes;
+
+        }
+
+        public static void setMethodAttributesFromController(List<String> methodAttributes, List<String> controllerAttributes)
+        {
+            foreach(String controllerAttr in controllerAttributes)
+            {
+                if(!methodAttributes.Contains(controllerAttr))
+                {
+                    // Some Attributes to Ignore
+                    if(!controllerAttr.StartsWith("Route") && !isHttpMethodAttribute(controllerAttr) && 
+                        !controllerAttr.StartsWith("AddVerbs"))
+                    {
+                        methodAttributes.Add(controllerAttr);
+                    }
+                }
+            }
+        }
+
+        public static Boolean isHttpMethodAttribute(String attribute)
+        {
+            String[] httpmethods = new String[] { "HttpPost", "HttpGet", "HttpPut", "HttpOptions", "HttpPatch", "HttpDelete", "HttpHead" };
+
+            return httpmethods.Contains(attribute);
         }
     }
 }

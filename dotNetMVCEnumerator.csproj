@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DotNetMVCEnumerator</RootNamespace>
     <AssemblyName>DotNetMVCEnumerator</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
@@ -113,6 +113,7 @@
     <Compile Include="source\CheckAttribute.cs" />
     <Compile Include="source\CsvExport.cs" />
     <Compile Include="source\Options.cs" />
+    <Compile Include="source\Result.cs" />
     <Compile Include="source\TableParser.cs" />
     <Compile Include="source\ControllerChecker.cs" />
     <Compile Include="Program.cs" />
