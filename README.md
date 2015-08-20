@@ -2,8 +2,11 @@
 
 ##About
 
-This script can be used to enumerate all the endpoints in an .NET MVC application and also list out the HTTP methods suported by them, if any. Additionally, if any security directives are supported by the application, we can search them by passing it as an argument. They will be listed out if they are set at either the class level or the method level itself. 
-The output will be saved to the CSV format for later use.
+This tool is used to enumerate .NET MVC controller end points and also list out any filter attributes assigned to them. The tool provides the ability to search endpoints that contain a specific attribute or alternatively missing an attribute. The output will be saved as a CSV file which can be used to assist your manual code review of the application or perform further analysis. 
+
+For additional details on the tool refer to our blog post: 
+
+<add link here>
 
 
 ###Supported Platforms:
