@@ -40,9 +40,9 @@ The basic usage of the script is as follows:
     
 The tool runs against a given directory and identifies:
 
-    All classes that inherit from a Controller class
-    All public methods within Controller class
-    Attributes assigned to a method including the ones set at the class level
+ - All classes that inherit from a Controller class
+ - All public methods within Controller class
+ - Attributes assigned to a method including the ones set at the class level
 
 Sample Usage 1 - Scan code within a directory and write output to the ‘results.csv’ file.
 
