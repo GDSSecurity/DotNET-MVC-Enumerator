@@ -6,7 +6,7 @@ This tool is used to enumerate .NET MVC controller end points and also list out 
 
 For additional details on the tool refer to our blog post: 
 
-<add link here>
+http://blog.gdssecurity.com/labs/2015/8/19/enumerating-net-mvc-application-endpoints-with-roslyn.html
 
 
 ###Supported Platforms:
