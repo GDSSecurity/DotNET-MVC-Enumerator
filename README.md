@@ -24,7 +24,7 @@ Note: If Visual Studio complains about a missing app.config file, delete it from
 
 The basic usage of the script is as follows:
 
-    > DotNotMVCEnumerator.exe -h
+    > DotNetMVCEnumerator.exe -h
 
     Usage: DotNetMVCEnumerator.exe
 
