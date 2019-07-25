@@ -114,7 +114,6 @@
     <Compile Include="source\CsvExport.cs" />
     <Compile Include="source\Options.cs" />
     <Compile Include="source\Result.cs" />
-    <Compile Include="source\TableParser.cs" />
     <Compile Include="source\ControllerChecker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
